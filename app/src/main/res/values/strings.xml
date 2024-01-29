@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">P2P Photo Uploader</string>
+    <string name="get_started">Get Started</string>
+    <string name="p2p_logo">P2P logo</string>
+    <string name="switch_camera_icon">Switch Camera</string>
+    <string name="open_gallery">Open Gallery</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="capture_photo_error">"An error has occurred while taking photo: "</string>
+    <string name="error_icon">Error Icon</string>
+    <string name="photo_capture_error">Photo Capture Error</string>
+    <string name="photo_capture_error_desc">An error has occurred while capturing the photo. Press exit to close the application.</string>
+    <string name="exit_dialog">Exit</string>
 </resources>
