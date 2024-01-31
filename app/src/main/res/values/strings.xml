@@ -10,4 +10,24 @@
     <string name="photo_capture_error">Photo Capture Error</string>
     <string name="photo_capture_error_desc">An error has occurred while capturing the photo. Press exit to close the application.</string>
     <string name="exit_dialog">Exit</string>
+    <string name="configuration_title_bar">Upload Configuration</string>
+    <string name="back_button">back button</string>
+    <string name="enter_target_information">Enter Target Information</string>
+    <string name="enter_target_info_desc">Please specify a target IP address and a port number to send the photo to.</string>
+    <string name="ip_textfield_color_change">IP Textfield Color Change</string>
+    <string name="port_textfield_color_change">Port textField color change</string>
+    <string name="invalid_format">Invalid Format</string>
+    <string name="enter_target_ip">Enter Target IP</string>
+    <string name="enter_target_port">Enter Target Port</string>
+    <string name="ensure_face_desc">Click on the button below to preview the photo that was taken and ensure that it includes a clear shot of your face. If not, hit the back arrow button on the top left to retake.</string>
+    <string name="ensure_face_header">Ensure Face Photo</string>
+    <string name="preview_photo">Preview Photo</string>
+    <string name="upload_photo_header">Upload/Transfer Photo</string>
+    <string name="upload_photo_desc">If the information above is correct, press the upload button below to transfer the photo to the target machine</string>
+    <string name="upload">UPLOAD PHOTO</string>
+    <string name="valid_ip">Valid IP Address</string>
+    <string name="valid_port">Valid Port Number</string>
+    <string name="image_capture_successful">Image capture successful!</string>
+    <string name="captured_img">Image</string>
+    <string name="preview_photo_error_desc">No photo was taken</string>
 </resources>

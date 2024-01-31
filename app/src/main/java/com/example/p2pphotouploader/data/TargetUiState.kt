@@ -8,5 +8,10 @@ import android.graphics.Bitmap
 data class TargetUiState(
     val ipAddress: String = "",
     val targetPort: Int = 0,
-    val capturedImage: Bitmap? = null
+    val capturedImage: Bitmap? = null,
+    val isIncorrectIPFormat: Boolean = false,
+    val isIncorrectPortFormat: Boolean = false,
+    val isTransferring: Boolean = false,
+    val isIPValid: Boolean = false,
+    val isPortValid: Boolean = false,
 )

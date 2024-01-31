@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,7 +16,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.p2pphotouploader.ui.ConfigurationScreen
 import com.example.p2pphotouploader.ui.PhotoCaptureScreen
+import com.example.p2pphotouploader.ui.PreviewPhotoScreen
 import com.example.p2pphotouploader.ui.SplashScreen
 import com.example.p2pphotouploader.ui.TargetViewModel
 
@@ -27,6 +30,7 @@ enum class P2PAppScreen {
 }
 
 
+@ExperimentalMaterial3Api
 @Composable
 fun P2PApp(modifier: Modifier = Modifier,
            viewModel: TargetViewModel = viewModel(),
@@ -59,8 +63,39 @@ fun P2PApp(modifier: Modifier = Modifier,
         composable(route = P2PAppScreen.TAKE_PHOTO.name) {
             PhotoCaptureScreen(
                 modifier = Modifier.fillMaxSize(),
-                onPhotoTaken = { viewModel.setPhotoTaken(bitmap = null) },
-                toNextScreen = { navController.navigate(P2PAppScreen.START.name) } // Replace for test
+                onPhotoClick = viewModel::setPhotoTaken,
+                toNextScreen = { navController.navigate(P2PAppScreen.CONFIGURATION.name) }
+            )
+        }
+
+        // c) To Configuration Screen
+        composable(route = P2PAppScreen.CONFIGURATION.name) {
+            ConfigurationScreen(
+                modifier = Modifier.background(Color.Black),
+                inputIP = viewModel.targetIP,
+                inputPort = viewModel.targetPort,
+                canNavigateBack = navController.previousBackStackEntry != null,
+                navigateBackHandler = { navController.navigateUp() },
+                isIPWrong = targetUIState.isIncorrectIPFormat,
+                isIPValid = targetUIState.isIPValid,
+                isPortWrong = targetUIState.isIncorrectPortFormat,
+                isPortValid = targetUIState.isPortValid,
+                onIPAddressFieldChanged = { viewModel.updateIPAddress(it) },
+                onPortAddressFieldChanged = { viewModel.updatePort(it) },
+                onKeyboardDoneIP = { viewModel.checkIPAddress() } ,
+                onKeyboardDonePort = { viewModel.checkPortNumber() } ,
+                onPreviewPhotoClick = { navController.navigate(P2PAppScreen.PREVIEW_PHOTO.name) },
+                onUploadClick = {}
+            )
+        }
+
+        // d) To Photo Preview Screen
+        composable(route = P2PAppScreen.PREVIEW_PHOTO.name) {
+            PreviewPhotoScreen(
+                modifier = Modifier,
+                canNavigateBack = navController.previousBackStackEntry != null,
+                navigateBackHandler = { navController.navigateUp() },
+                imageBitmap = targetUIState.capturedImage,
             )
         }
     }

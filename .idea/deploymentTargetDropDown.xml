@@ -2,6 +2,22 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
+      <entry key="ConfigurationScreenPreview">
+        <State>
+          <runningDeviceTargetSelectedWithDropDown>
+            <Target>
+              <type value="RUNNING_DEVICE_TARGET" />
+              <deviceKey>
+                <Key>
+                  <type value="SERIAL_NUMBER" />
+                  <value value="adb-R5CW71T3XSH-ZDdQTr._adb-tls-connect._tcp" />
+                </Key>
+              </deviceKey>
+            </Target>
+          </runningDeviceTargetSelectedWithDropDown>
+          <timeTargetWasSelectedWithDropDown value="2024-01-30T11:04:06.397194601Z" />
+        </State>
+      </entry>
       <entry key="GreetingPreview">
         <State />
       </entry>
@@ -21,7 +37,7 @@
               </deviceKey>
             </Target>
           </runningDeviceTargetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-01-29T05:13:58.073608359Z" />
+          <timeTargetWasSelectedWithDropDown value="2024-01-31T06:50:16.604847067Z" />
         </State>
       </entry>
     </value>
