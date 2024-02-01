@@ -107,7 +107,7 @@ fun PhotoCaptureScreen(modifier: Modifier = Modifier,
                 )
             }
 
-            // Bottom Bar of Camera Feed           
+            // Bottom Bar of Camera Feed
             Row(modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
@@ -238,4 +238,3 @@ private fun closeApplication(context: Context) {
     val activity = context as Activity
     activity.finish()
 }
-

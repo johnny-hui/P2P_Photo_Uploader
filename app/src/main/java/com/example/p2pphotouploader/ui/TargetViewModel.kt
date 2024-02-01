@@ -3,6 +3,7 @@ package com.example.p2pphotouploader.ui
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.p2pphotouploader.data.TargetUiState
@@ -34,7 +35,7 @@ class TargetViewModel : ViewModel() {
                 currentState.copy(
                     ipAddress = "",
                     isIncorrectIPFormat = true,
-                    isIPValid = false
+                    isIPValid = false,
                 )
             }
         } else if(validateIP(targetIP)) {
@@ -42,6 +43,7 @@ class TargetViewModel : ViewModel() {
                 currentState.copy(
                     ipAddress = targetIP,
                     isIncorrectIPFormat = false,
+                    showUploadError = false,
                     isIPValid = true,
                 )
             }
@@ -65,6 +67,7 @@ class TargetViewModel : ViewModel() {
                     currentState.copy(
                         targetPort = portToInt,
                         isIncorrectPortFormat = false,
+                        showUploadError = false,
                         isPortValid = true
                     )
                 }
@@ -86,18 +89,46 @@ class TargetViewModel : ViewModel() {
                 )
             }
         }
-
     }
 
+    fun uploadPhotoHandler() {
+        // Validate Fields first (Use AlertDialog to display error)
+        if(uiState.value.isIncorrectIPFormat
+            or uiState.value.isIncorrectPortFormat
+            or targetIP.isEmpty()
+            or targetPort.isEmpty()
+        ) {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    showUploadError = true
+                )
+            }
+        } else {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    isTransferring = true
+                )
+            }
+        }
+    }
 
     // For TextField States (ConfigurationScreen)
     var targetIP by mutableStateOf("")
     var targetPort by mutableStateOf("")
+
     fun updateIPAddress(inputIP: String) {
         targetIP = inputIP
     }
 
     fun updatePort(inputPort: String) {
         targetPort = inputPort
+    }
+
+    fun onCloseConfigDialogError() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showUploadError = !currentState.showUploadError
+            )
+        }
     }
 }

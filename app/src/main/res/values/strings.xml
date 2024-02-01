@@ -30,4 +30,7 @@
     <string name="image_capture_successful">Image capture successful!</string>
     <string name="captured_img">Image</string>
     <string name="preview_photo_error_desc">No photo was taken</string>
+    <string name="uploading_state">UPLOADING...</string>
+    <string name="upload_error">Upload Error</string>
+    <string name="upload_field_missing_desc">Either one or both the target IP or port fields are invalid.</string>
 </resources>

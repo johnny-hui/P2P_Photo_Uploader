@@ -1,5 +1,8 @@
 package com.example.p2pphotouploader.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +15,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
@@ -39,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.example.p2pphotouploader.R
 
 @ExperimentalMaterial3Api
@@ -57,7 +64,10 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                         onKeyboardDoneIP: () -> Unit,
                         onKeyboardDonePort: () -> Unit,
                         onPreviewPhotoClick: () -> Unit,
-                        onUploadClick: () -> Unit
+                        onUploadClick: () -> Unit,
+                        isTransferring: Boolean,
+                        showUploadError: Boolean,
+                        onCloseDialog: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -91,7 +101,8 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                 onIPAddressFieldChanged = { onIPAddressFieldChanged(it) },
                 onPortAddressFieldChanged = { onPortAddressFieldChanged(it) },
                 onKeyboardDoneIP = onKeyboardDoneIP,
-                onKeyboardDonePort = onKeyboardDonePort
+                onKeyboardDonePort = onKeyboardDonePort,
+                isEnabled = isTransferring
             )
             TextInstructions(
                 modifier = Modifier,
@@ -112,10 +123,19 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                 modifier = Modifier,
                 color = colorResource(id = R.color.dandelion_yellow),
                 text = stringResource(R.string.upload),
-                onClickHandler = onUploadClick
+                isTransferring = isTransferring,
+                onClickHandler = {
+                    onUploadClick()
+                },
             )
         }
-
+        if(showUploadError) {
+            ConfigurationErrorDialog(
+                title = stringResource(R.string.upload_error),
+                description = stringResource(R.string.upload_field_missing_desc),
+                closeDialog = onCloseDialog
+            )
+        }
     }
 }
 
@@ -156,6 +176,10 @@ fun TextInstructions(modifier: Modifier = Modifier,
 }
 
 
+/**
+ * A composable that handles the updating and verification
+ * of IP address and port number TextFields.
+ */
 @Composable
 fun IPAndPortTextFields(modifier: Modifier = Modifier,
                         inputIP: String,
@@ -167,7 +191,8 @@ fun IPAndPortTextFields(modifier: Modifier = Modifier,
                         onIPAddressFieldChanged: (String) -> Unit,
                         onPortAddressFieldChanged: (String) -> Unit,
                         onKeyboardDoneIP: () -> Unit,
-                        onKeyboardDonePort: () -> Unit
+                        onKeyboardDonePort: () -> Unit,
+                        isEnabled: Boolean,
 ) {
     val robotoFontFamily = FontFamily(
         Font(R.font.roboto, FontWeight.Normal),
@@ -192,6 +217,7 @@ fun IPAndPortTextFields(modifier: Modifier = Modifier,
             ),
             value = inputIP,
             singleLine = true,
+            enabled = !isEnabled, // disable when isTransferring
             shape = MaterialTheme.shapes.large,
             onValueChange = onIPAddressFieldChanged,  // fun updateIPAddress(inputIP: String)
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -241,6 +267,7 @@ fun IPAndPortTextFields(modifier: Modifier = Modifier,
             value = inputPort,
             shape = MaterialTheme.shapes.large,
             singleLine = true,
+            enabled = !isEnabled, // disable when isTransferring
             onValueChange = onPortAddressFieldChanged,  // fun updatePort(inputIP: String)
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
@@ -317,12 +344,21 @@ fun CustomTopAppBar(
 }
 
 
+/**
+ * A multi-purpose custom button
+ */
 @Composable
 fun CustomButton(modifier: Modifier = Modifier,
                  text: String,
                  color: Color = Color.White,
-                 onClickHandler: () -> Unit = {}
+                 onClickHandler: () -> Unit = {},
+                 isTransferring: Boolean = false
 ) {
+    val animateStateButtonColor = animateColorAsState(
+        targetValue = if (isTransferring) colorResource(id = R.color.transfer_blue) else color,
+        animationSpec = tween(1000, 0, LinearOutSlowInEasing), label = ""
+    )
+
     Column(
         modifier
             .padding(10.dp)
@@ -331,14 +367,67 @@ fun CustomButton(modifier: Modifier = Modifier,
     ) {
         Button(
             modifier = Modifier.height(50.dp),
-            colors = ButtonDefaults.buttonColors(color),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = animateStateButtonColor.value
+            ),
             onClick = { onClickHandler() }
         ) {
-            Text(
-                text = text,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+            if(isTransferring) {
+                Text(
+                    text = stringResource(R.string.uploading_state),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            } else {
+                Text(
+                    text = text,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
         }
     }
+}
+
+
+/**
+ * An alert dialog that warns the user about missing or incorrect format
+ * in the attributes/states.
+ */
+@Composable
+fun ConfigurationErrorDialog(title: String,
+                             description: String,
+                             closeDialog: () -> Unit)
+{
+    AlertDialog(
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        ),
+        icon = {
+            Icon(
+                Icons.Default.Error,
+                contentDescription = stringResource(R.string.error_icon)
+            )
+        },
+        title = {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(text = description)
+        },
+        onDismissRequest = { closeDialog() },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    closeDialog()
+                }
+            ) {
+                Text(stringResource(R.string.exit_dialog))
+            }
+        },
+    )
 }

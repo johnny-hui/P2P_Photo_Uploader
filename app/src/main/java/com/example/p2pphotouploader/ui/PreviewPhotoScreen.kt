@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,9 +53,11 @@ fun PreviewPhotoScreen(modifier: Modifier = Modifier,
             ) {
                 Image(
                     modifier = modifier
-                        .background(Color.Black),
+                        .background(Color.Black)
+                        .fillMaxSize(),
                     bitmap = imageBitmap.asImageBitmap(),
-                    contentDescription = stringResource(R.string.captured_img)
+                    contentDescription = stringResource(R.string.captured_img),
+                    contentScale = ContentScale.Crop
                 )
             }
         }
