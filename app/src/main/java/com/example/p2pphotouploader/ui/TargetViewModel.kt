@@ -3,10 +3,12 @@ package com.example.p2pphotouploader.ui
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.p2pphotouploader.data.TargetUiState
+import com.example.p2pphotouploader.utility.FAILURE
+import com.example.p2pphotouploader.utility.SUCCESS
+import com.example.p2pphotouploader.utility.uploadPhoto
 import com.example.p2pphotouploader.utility.validateIP
 import com.example.p2pphotouploader.utility.validatePort
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,23 +93,44 @@ class TargetViewModel : ViewModel() {
         }
     }
 
-    fun uploadPhotoHandler() {
-        // Validate Fields first (Use AlertDialog to display error)
+    /**
+     * Performs and handles the upload photo functionality
+     */
+    fun uploadPhotoHandler() : String {
+        // a) Validate Fields first (Use AlertDialog to display error)
         if(uiState.value.isIncorrectIPFormat
-            or uiState.value.isIncorrectPortFormat
-            or targetIP.isEmpty()
-            or targetPort.isEmpty()
+                or uiState.value.isIncorrectPortFormat
+                or targetIP.isEmpty()
+                or targetPort.isEmpty()
         ) {
             _uiState.update { currentState ->
                 currentState.copy(
+                    showTransferErrorMsg = false,
                     showUploadError = true
                 )
             }
-        } else {
+            return FAILURE
+        }
+        // b) Perform Transfer (if input valid)
+        else {
             _uiState.update { currentState ->
                 currentState.copy(
                     isTransferring = true
                 )
+            }
+
+            if(uploadPhoto(targetIP, uiState.value.targetPort, uiState.value.capturedImage) == SUCCESS) {
+                resetState()
+                return SUCCESS
+            } else {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isTransferring = false,
+                        showUploadError = true,
+                        showTransferErrorMsg = true
+                    )
+                }
+                return FAILURE
             }
         }
     }
@@ -124,11 +147,20 @@ class TargetViewModel : ViewModel() {
         targetPort = inputPort
     }
 
+    /**
+     * Resets the error states on dialog close (ConfigurationScreen)
+     */
     fun onCloseConfigDialogError() {
         _uiState.update { currentState ->
             currentState.copy(
-                showUploadError = !currentState.showUploadError
+                showUploadError = !currentState.showUploadError,
             )
         }
+    }
+
+    private fun resetState() {
+        targetIP = ""
+        targetPort = ""
+        _uiState.value = TargetUiState()
     }
 }

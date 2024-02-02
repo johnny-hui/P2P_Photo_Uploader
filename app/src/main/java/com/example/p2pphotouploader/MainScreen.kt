@@ -88,7 +88,11 @@ fun P2PApp(modifier: Modifier = Modifier,
                 onUploadClick = { viewModel.uploadPhotoHandler() },
                 isTransferring = targetUIState.isTransferring,
                 showUploadError = targetUIState.showUploadError,
-                onCloseDialog = { viewModel.onCloseConfigDialogError() }
+                showTransferErrorMsg = targetUIState.showTransferErrorMsg,
+                onCloseDialog = { viewModel.onCloseConfigDialogError() },
+                onSuccess = {
+                    navController.popBackStack(P2PAppScreen.START.name, inclusive = false)
+                }
             )
         }
 

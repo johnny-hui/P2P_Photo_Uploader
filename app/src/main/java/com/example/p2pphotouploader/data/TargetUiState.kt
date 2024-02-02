@@ -15,4 +15,5 @@ data class TargetUiState(
     val isIPValid: Boolean = false,
     val isPortValid: Boolean = false,
     val showUploadError: Boolean = false,
+    val showTransferErrorMsg: Boolean = false
 )

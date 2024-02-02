@@ -33,4 +33,6 @@
     <string name="uploading_state">UPLOADING...</string>
     <string name="upload_error">Upload Error</string>
     <string name="upload_field_missing_desc">Either one or both the target IP or port fields are invalid.</string>
+    <string name="upload_error_msg">A timeout error has occurred while uploading the face photo to target device. This may be due to the entering of incorrect target information (IP address or port) or offline target. Please try again.</string>
+    <string name="transfer_success_toast_msg">Face Photo Transfer Successful!</string>
 </resources>

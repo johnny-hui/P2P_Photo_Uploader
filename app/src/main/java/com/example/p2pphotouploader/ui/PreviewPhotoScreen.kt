@@ -71,7 +71,7 @@ fun PreviewPhotoScreen(modifier: Modifier = Modifier,
                     modifier = modifier,
                     title = stringResource(R.string.preview_photo),
                     canNavigateBack = canNavigateBack,
-                    navigateUp = navigateBackHandler
+                    navigateUp = navigateBackHandler,
                 )
             }
         ) { innerPadding ->

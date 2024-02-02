@@ -10,7 +10,6 @@ import androidx.camera.core.ImageProxy
  *
  * @param [image]
  *      An imageProxy object
- *
  */
 fun imageAdjusterPortrait(image: ImageProxy): Bitmap {
     val matrix = Matrix().apply {

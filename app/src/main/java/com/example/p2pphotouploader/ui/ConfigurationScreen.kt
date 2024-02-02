@@ -1,5 +1,7 @@
 package com.example.p2pphotouploader.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -47,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.p2pphotouploader.R
+import com.example.p2pphotouploader.utility.SUCCESS
 
 @ExperimentalMaterial3Api
 @Composable
@@ -64,18 +68,23 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                         onKeyboardDoneIP: () -> Unit,
                         onKeyboardDonePort: () -> Unit,
                         onPreviewPhotoClick: () -> Unit,
-                        onUploadClick: () -> Unit,
+                        onUploadClick: () -> String,
                         isTransferring: Boolean,
                         showUploadError: Boolean,
-                        onCloseDialog: () -> Unit
+                        showTransferErrorMsg: Boolean,
+                        onCloseDialog: () -> Unit,
+                        onSuccess: () -> Unit
 ) {
+    val context = LocalContext.current.applicationContext
+
     Scaffold(
         topBar = {
             CustomTopAppBar(
                 modifier = modifier,
                 title = stringResource(R.string.configuration_title_bar),
                 canNavigateBack = canNavigateBack,
-                navigateUp = navigateBackHandler
+                navigateUp = navigateBackHandler,
+                isTransferring = isTransferring
             )
         }
     ) { innerPadding ->
@@ -112,7 +121,8 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
             CustomButton(
                 modifier = Modifier,
                 text = stringResource(R.string.preview_photo),
-                onClickHandler = onPreviewPhotoClick
+                onClickHandler = onPreviewPhotoClick,
+                isTransferring = isTransferring,
             )
             TextInstructions(
                 modifier = Modifier,
@@ -125,14 +135,25 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                 text = stringResource(R.string.upload),
                 isTransferring = isTransferring,
                 onClickHandler = {
-                    onUploadClick()
+                    if(onUploadClick() == SUCCESS) {
+                        makeToast(
+                            context = context,
+                            description = context.getString(R.string.transfer_success_toast_msg)
+                        )
+                        onSuccess()
+                    }
                 },
             )
         }
         if(showUploadError) {
-            ConfigurationErrorDialog(
+            ConfigurationUploadErrorDialog(
                 title = stringResource(R.string.upload_error),
-                description = stringResource(R.string.upload_field_missing_desc),
+                description = {
+                    if(showTransferErrorMsg) 
+                        Text(text = stringResource(R.string.upload_error_msg))
+                    else 
+                        Text(text = stringResource(R.string.upload_field_missing_desc)) 
+                  },
                 closeDialog = onCloseDialog
             )
         }
@@ -320,6 +341,7 @@ fun CustomTopAppBar(
     title: String,
     canNavigateBack: Boolean,
     navigateUp: () -> Unit = {},
+    isTransferring: Boolean = false
 ) {
     TopAppBar(
         modifier = modifier,
@@ -332,7 +354,10 @@ fun CustomTopAppBar(
         },
         navigationIcon = {
             if(canNavigateBack) {
-                IconButton(onClick = navigateUp) {
+                IconButton(
+                    onClick = navigateUp,
+                    enabled = !isTransferring
+                ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = stringResource(R.string.back_button)
@@ -367,6 +392,7 @@ fun CustomButton(modifier: Modifier = Modifier,
     ) {
         Button(
             modifier = Modifier.height(50.dp),
+            enabled = !isTransferring, // disable when isTransferring
             colors = ButtonDefaults.buttonColors(
                 containerColor = animateStateButtonColor.value
             ),
@@ -395,9 +421,9 @@ fun CustomButton(modifier: Modifier = Modifier,
  * in the attributes/states.
  */
 @Composable
-fun ConfigurationErrorDialog(title: String,
-                             description: String,
-                             closeDialog: () -> Unit)
+fun ConfigurationUploadErrorDialog(title: String,
+                                   description: @Composable (() -> Unit)? = null,
+                                   closeDialog: () -> Unit)
 {
     AlertDialog(
         properties = DialogProperties(
@@ -416,9 +442,7 @@ fun ConfigurationErrorDialog(title: String,
                 fontWeight = FontWeight.Bold
             )
         },
-        text = {
-            Text(text = description)
-        },
+        text = description,
         onDismissRequest = { closeDialog() },
         confirmButton = {
             TextButton(
@@ -430,4 +454,13 @@ fun ConfigurationErrorDialog(title: String,
             }
         },
     )
+}
+
+
+private fun makeToast(context: Context, description: String) {
+    Toast.makeText(
+        context,
+        description,
+        Toast.LENGTH_SHORT
+    ).show()
 }
