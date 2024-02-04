@@ -2,11 +2,14 @@ package com.example.p2pphotouploader.utility
 
 import android.graphics.Bitmap
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.io.BufferedReader
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.io.PrintWriter
 import java.net.Socket
 
@@ -15,7 +18,10 @@ const val SUCCESS: String = "1"
 const val FAILURE: String = "0"
 const val TIMEOUT: Long = 120000 // 2 minutes (in milliseconds)
 const val TIMEOUT_MSG: String = "Timeout exceeded: "
+const val DELAY: Long = 1000  // 1 second (for buffer with server)
 const val CONNECT_ERROR: String = "An error has occurred: "
+const val ACK: String = "ACK"
+const val SIGNAL = "RECEIVE PHOTO"
 
 
 /**
@@ -48,15 +54,26 @@ fun uploadPhoto(ip: String,
                     // Create input and output streams for communication
                     val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                     val output = PrintWriter(socket.getOutputStream(), true)
+                    val outputBitmap = socket.getOutputStream()
 
-                    // TODO: Send bitmap to server (determine how to)
+                    // Send initial signal to send message
+                    output.write(SIGNAL)
 
-                    // TODO: Await message from server (this is where timeout can occur)
+                    delay(DELAY)
 
-                    // Clear file descriptors
-                    clearFD(socket, input, output)
+                    // Convert Bitmap to byte array + Send to server
+                    val byteArrayOutputStream = ByteArrayOutputStream()
+                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+                    outputBitmap.write(byteArrayOutputStream.toByteArray())
 
-                    return@withTimeout SUCCESS
+                    // Await message from server (stalls here)
+                    if(input.readLine() == ACK) {
+                        clearFD(socket, input, outputBitmap, output)
+                        return@withTimeout SUCCESS
+                    } else {
+                        clearFD(socket, input, outputBitmap, output)
+                        return@withTimeout FAILURE
+                    }
                 } else {
                     socket.close()
                 }
@@ -76,9 +93,11 @@ fun uploadPhoto(ip: String,
 
 private fun clearFD(socket: Socket,
                     inputFD: BufferedReader,
-                    outputFD: PrintWriter)
+                    outputFD: OutputStream,
+                    outputPrint: PrintWriter)
 {
     inputFD.close()
     outputFD.close()
+    outputPrint.close()
     socket.close()
 }
