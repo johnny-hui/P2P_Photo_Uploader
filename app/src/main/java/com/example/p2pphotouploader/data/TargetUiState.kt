@@ -1,6 +1,8 @@
 package com.example.p2pphotouploader.data
-
 import android.graphics.Bitmap
+
+// CONSTANTS
+const val EMPTY_TEXTFIELD_MSG = "Cannot be empty!"
 
 /**
  * Data class that represents the current UI state in terms of [ipAddress]
@@ -15,5 +17,5 @@ data class TargetUiState(
     val isIPValid: Boolean = false,
     val isPortValid: Boolean = false,
     val showUploadError: Boolean = false,
-    val showTransferErrorMsg: Boolean = false
+    val showTransferErrorMsg: Boolean = false,
 )

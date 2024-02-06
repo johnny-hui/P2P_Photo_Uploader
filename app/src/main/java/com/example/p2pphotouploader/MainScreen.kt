@@ -85,14 +85,12 @@ fun P2PApp(modifier: Modifier = Modifier,
                 onKeyboardDoneIP = { viewModel.checkIPAddress() } ,
                 onKeyboardDonePort = { viewModel.checkPortNumber() } ,
                 onPreviewPhotoClick = { navController.navigate(P2PAppScreen.PREVIEW_PHOTO.name) },
-                onUploadClick = { viewModel.uploadPhotoHandler() },
+                onUploadClick = viewModel::uploadPhotoHandler,
                 isTransferring = targetUIState.isTransferring,
                 showUploadError = targetUIState.showUploadError,
                 showTransferErrorMsg = targetUIState.showTransferErrorMsg,
                 onCloseDialog = { viewModel.onCloseConfigDialogError() },
-                onSuccess = {
-                    navController.popBackStack(P2PAppScreen.START.name, inclusive = false)
-                }
+                onSuccess = { navController.popBackStack(P2PAppScreen.START.name, inclusive = false) }
             )
         }
 

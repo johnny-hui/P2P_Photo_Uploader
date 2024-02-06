@@ -3,14 +3,15 @@ package com.example.p2pphotouploader.utility
 import android.graphics.Bitmap
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
-import java.io.PrintWriter
+import java.io.OutputStreamWriter
 import java.net.Socket
 
 
@@ -40,61 +41,56 @@ const val SIGNAL = "RECEIVE PHOTO"
  * @return status
  *      The return status (SUCCESS/FAILURE)
  */
-fun uploadPhoto(ip: String,
-                port: Int,
-                bitmap: Bitmap?) : String
-{
-    runBlocking {
-        try {
-            withTimeout(TIMEOUT) {
-                // Connect to the server
-                val socket = Socket(ip, port)
+suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
+    var result: String = FAILURE
 
-                if(socket.isConnected) {
-                    // Create input and output streams for communication
-                    val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                    val output = PrintWriter(socket.getOutputStream(), true)
-                    val outputBitmap = socket.getOutputStream()
+    try {
+        withTimeout(TIMEOUT) {
+            val socket = Socket(ip, port)
 
-                    // Send initial signal to send message
-                    output.write(SIGNAL)
+            if(socket.isConnected) {
+                val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                val output = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
 
-                    delay(DELAY)
+                output.write(SIGNAL)
+                output.flush()
+                delay(DELAY)
 
-                    // Convert Bitmap to byte array + Send to server
-                    val byteArrayOutputStream = ByteArrayOutputStream()
-                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-                    outputBitmap.write(byteArrayOutputStream.toByteArray())
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+                val byteArray = byteArrayOutputStream.toByteArray()
 
-                    // Await message from server (stalls here)
-                    if(input.readLine() == ACK) {
-                        clearFD(socket, input, outputBitmap, output)
-                        return@withTimeout SUCCESS
-                    } else {
-                        clearFD(socket, input, outputBitmap, output)
-                        return@withTimeout FAILURE
-                    }
-                } else {
-                    socket.close()
+                val dataOutputStream = DataOutputStream(socket.getOutputStream())
+                dataOutputStream.writeInt(byteArray.size)
+                dataOutputStream.write(byteArray)
+
+                if(input.readLine() == ACK) {
+                    clearFD(socket, input, dataOutputStream, output)
+                    result = SUCCESS
                 }
+            } else {
+                socket.close()
+                result = FAILURE
             }
-
-        } catch (e: TimeoutCancellationException) {
-            println(TIMEOUT_MSG.plus(e))
-            return@runBlocking FAILURE
-
-        } catch (e: IOException) {
-            println(CONNECT_ERROR.plus(e))
-            return@runBlocking FAILURE
         }
+    } catch (e: TimeoutCancellationException) {
+        println(TIMEOUT_MSG.plus(e))
+        result = FAILURE
+
+    } catch (e: IOException) {
+        println(CONNECT_ERROR.plus(e))
+        result = FAILURE
     }
-    return FAILURE
+
+    return result
 }
+
+
 
 private fun clearFD(socket: Socket,
                     inputFD: BufferedReader,
                     outputFD: OutputStream,
-                    outputPrint: PrintWriter)
+                    outputPrint: BufferedWriter)
 {
     inputFD.close()
     outputFD.close()

@@ -33,6 +33,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,31 +55,37 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.p2pphotouploader.R
 import com.example.p2pphotouploader.utility.SUCCESS
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.reflect.KSuspendFunction0
 
 @ExperimentalMaterial3Api
 @Composable
-fun ConfigurationScreen(modifier: Modifier = Modifier,
-                        inputIP: String,
-                        inputPort: String,
-                        canNavigateBack: Boolean,
-                        navigateBackHandler: () -> Unit = {},
-                        isIPValid: Boolean,
-                        isIPWrong: Boolean,
-                        isPortWrong: Boolean,
-                        isPortValid: Boolean,
-                        onIPAddressFieldChanged: (String) -> Unit,
-                        onPortAddressFieldChanged: (String) -> Unit,
-                        onKeyboardDoneIP: () -> Unit,
-                        onKeyboardDonePort: () -> Unit,
-                        onPreviewPhotoClick: () -> Unit,
-                        onUploadClick: () -> String,
-                        isTransferring: Boolean,
-                        showUploadError: Boolean,
-                        showTransferErrorMsg: Boolean,
-                        onCloseDialog: () -> Unit,
-                        onSuccess: () -> Unit
+fun ConfigurationScreen(
+    modifier: Modifier = Modifier,
+    inputIP: String,
+    inputPort: String,
+    canNavigateBack: Boolean,
+    navigateBackHandler: () -> Unit = {},
+    isIPValid: Boolean,
+    isIPWrong: Boolean,
+    isPortWrong: Boolean,
+    isPortValid: Boolean,
+    onIPAddressFieldChanged: (String) -> Unit,
+    onPortAddressFieldChanged: (String) -> Unit,
+    onKeyboardDoneIP: () -> Unit,
+    onKeyboardDonePort: () -> Unit,
+    onPreviewPhotoClick: () -> Unit,
+    onUploadClick: KSuspendFunction0<String>,
+    isTransferring: Boolean,
+    showUploadError: Boolean,
+    showTransferErrorMsg: Boolean,
+    onCloseDialog: () -> Unit,
+    onSuccess: () -> Unit,
 ) {
     val context = LocalContext.current.applicationContext
+    var result by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -135,12 +145,16 @@ fun ConfigurationScreen(modifier: Modifier = Modifier,
                 text = stringResource(R.string.upload),
                 isTransferring = isTransferring,
                 onClickHandler = {
-                    if(onUploadClick() == SUCCESS) {
-                        makeToast(
-                            context = context,
-                            description = context.getString(R.string.transfer_success_toast_msg)
-                        )
-                        onSuccess()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        result = onUploadClick()
+
+                        if(result == SUCCESS) {
+                            makeToast(
+                                context = context,
+                                description = context.getString(R.string.transfer_success_toast_msg)
+                            )
+                            onSuccess()
+                        }
                     }
                 },
             )

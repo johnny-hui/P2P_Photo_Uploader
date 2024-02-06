@@ -5,23 +5,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.p2pphotouploader.data.EMPTY_TEXTFIELD_MSG
 import com.example.p2pphotouploader.data.TargetUiState
 import com.example.p2pphotouploader.utility.FAILURE
 import com.example.p2pphotouploader.utility.SUCCESS
-import com.example.p2pphotouploader.utility.uploadPhoto
+import com.example.p2pphotouploader.utility.uploadPhotoAsync
 import com.example.p2pphotouploader.utility.validateIP
 import com.example.p2pphotouploader.utility.validatePort
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 class TargetViewModel : ViewModel() {
      //Exposes UI state to UI components and viewModel
     private val _uiState = MutableStateFlow(TargetUiState())
     val uiState: StateFlow<TargetUiState> = _uiState.asStateFlow()
 
-    // Setters (to update UI state)
+    // Public States
+    var targetIP by mutableStateOf("")
+    var targetPort by mutableStateOf("")
+
+    /**
+     * Sets the capturedImage property of the UI State
+     */
     fun setPhotoTaken(bitmap: Bitmap) {
         _uiState.update { currentState ->
             currentState.copy(
@@ -30,9 +39,13 @@ class TargetViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Verifies the IP address (entered in textField) and
+     * updates the property in the UI state
+     */
     fun checkIPAddress() {
         if(targetIP.isEmpty()) {
-            targetIP = "Cannot be empty!"
+            targetIP = EMPTY_TEXTFIELD_MSG
             _uiState.update { currentState ->
                 currentState.copy(
                     ipAddress = "",
@@ -60,8 +73,16 @@ class TargetViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Verifies the port number (entered in textField) and
+     * updates the property in the UI state
+     */
     fun checkPortNumber() {
         try {
+            if(targetPort.isEmpty()) {
+                targetPort = EMPTY_TEXTFIELD_MSG
+            }
+
             val portToInt = targetPort.toInt()
 
             if(validatePort(portToInt)) {
@@ -96,7 +117,9 @@ class TargetViewModel : ViewModel() {
     /**
      * Performs and handles the upload photo functionality
      */
-    fun uploadPhotoHandler() : String {
+    suspend fun uploadPhotoHandler() : String {
+        var result = ""
+
         // a) Validate Fields first (Use AlertDialog to display error)
         if(uiState.value.isIncorrectIPFormat
                 or uiState.value.isIncorrectPortFormat
@@ -119,30 +142,37 @@ class TargetViewModel : ViewModel() {
                 )
             }
 
-            if(uploadPhoto(targetIP, uiState.value.targetPort, uiState.value.capturedImage) == SUCCESS) {
-                resetState()
-                return SUCCESS
-            } else {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        isTransferring = false,
-                        showUploadError = true,
-                        showTransferErrorMsg = true
-                    )
+            // Use Co-routines here
+            withContext(Dispatchers.IO) {
+                if(uploadPhotoAsync(targetIP, uiState.value.targetPort, uiState.value.capturedImage) == SUCCESS) {
+                    resetState()
+                    result = SUCCESS
+                } else {
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            isTransferring = false,
+                            showUploadError = true,
+                            showTransferErrorMsg = true
+                        )
+                    }
+                    result = FAILURE
                 }
-                return FAILURE
             }
+            return result
         }
     }
 
-    // For TextField States (ConfigurationScreen)
-    var targetIP by mutableStateOf("")
-    var targetPort by mutableStateOf("")
 
+    /**
+     * Updates the IP address TextField state
+     */
     fun updateIPAddress(inputIP: String) {
         targetIP = inputIP
     }
 
+    /**
+     * Updates the port number TextField state
+     */
     fun updatePort(inputPort: String) {
         targetPort = inputPort
     }
