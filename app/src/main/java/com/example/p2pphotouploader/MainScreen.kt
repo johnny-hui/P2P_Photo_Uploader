@@ -21,6 +21,8 @@ import com.example.p2pphotouploader.ui.PhotoCaptureScreen
 import com.example.p2pphotouploader.ui.PreviewPhotoScreen
 import com.example.p2pphotouploader.ui.SplashScreen
 import com.example.p2pphotouploader.ui.TargetViewModel
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 
 enum class P2PAppScreen {
     START,
@@ -32,9 +34,9 @@ enum class P2PAppScreen {
 
 @ExperimentalMaterial3Api
 @Composable
-fun P2PApp(modifier: Modifier = Modifier,
-           viewModel: TargetViewModel = viewModel(),
-           navController: NavHostController = rememberNavController()
+fun P2PApp(
+    viewModel: TargetViewModel = viewModel(),
+    navController: NavHostController = rememberNavController()
 ) {
     // Locks the activity to constraint device UI rotation
     val activity = LocalContext.current as Activity

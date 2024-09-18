@@ -13,6 +13,7 @@ import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.net.Socket
+import java.nio.ByteBuffer
 
 
 const val SUCCESS: String = "1"
@@ -22,11 +23,11 @@ const val TIMEOUT_MSG: String = "Timeout exceeded: "
 const val DELAY: Long = 1000  // 1 second (for buffer with server)
 const val CONNECT_ERROR: String = "An error has occurred: "
 const val ACK: String = "ACK"
-const val SIGNAL = "RECEIVE PHOTO"
+const val SIGNAL = "PHOTO"
 
 
 /**
- * Establishes a client socket and connecting to a target server to send a
+ * Securely establishes a connection to a target server to send a
  * picture (via. bitmap).
  *
  * @param [ip]
@@ -38,7 +39,7 @@ const val SIGNAL = "RECEIVE PHOTO"
  * @param [bitmap]
  *      A bitmap of the image
  *
- * @return status
+ * @return result
  *      The return status (SUCCESS/FAILURE)
  */
 suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
@@ -46,30 +47,53 @@ suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
 
     try {
         withTimeout(TIMEOUT) {
-            val socket = Socket(ip, port)
+            val (privateKey, publicKey) = generateKeyPair()
+            val targetSocket = Socket(ip, port)
 
-            if(socket.isConnected) {
-                val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val output = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
+            val (secretKey, sessionIV) = establishSecurityParameters(targetSocket, privateKey, publicKey)
 
-                output.write(SIGNAL)
-                output.flush()
+            if(targetSocket.isConnected) {
+                val input = BufferedReader(InputStreamReader(targetSocket.getInputStream()))
+                val output = BufferedWriter(OutputStreamWriter(targetSocket.getOutputStream()))
+                val dataOutputStream = DataOutputStream(targetSocket.getOutputStream())
+
+                // Send a signal to target
+                sendData(
+                    inputData = SIGNAL.toByteArray(),
+                    output = dataOutputStream,
+                    secretKey = secretKey,
+                    iv=sessionIV
+                )
                 delay(DELAY)
 
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-                val byteArray = byteArrayOutputStream.toByteArray()
+                val photoData = byteArrayOutputStream.toByteArray()
 
-                val dataOutputStream = DataOutputStream(socket.getOutputStream())
-                dataOutputStream.writeInt(byteArray.size)
-                dataOutputStream.write(byteArray)
+                // Send size of photo
+                val photoSize = ByteBuffer.allocate(4).putInt(photoData.size).array()
+                println("[+] Photo Size (before padding): ${photoData.size}")
+                sendData(
+                    inputData = photoSize,
+                    output = dataOutputStream,
+                    secretKey = secretKey,
+                    iv=sessionIV
+                )
+
+                // Send photo data
+                sendData(
+                    inputData = photoData,
+                    output = dataOutputStream,
+                    secretKey = secretKey,
+                    iv=sessionIV
+                )
 
                 if(input.readLine() == ACK) {
-                    clearFD(socket, input, dataOutputStream, output)
+                    clearFD(targetSocket, input, dataOutputStream, output)
                     result = SUCCESS
                 }
             } else {
-                socket.close()
+                targetSocket.close()
                 result = FAILURE
             }
         }
@@ -81,7 +105,6 @@ suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
         println(CONNECT_ERROR.plus(e))
         result = FAILURE
     }
-
     return result
 }
 

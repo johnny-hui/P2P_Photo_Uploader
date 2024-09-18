@@ -134,7 +134,7 @@ class TargetViewModel : ViewModel() {
             }
             return FAILURE
         }
-        // b) Perform Transfer (if input valid)
+        // b) Perform Transfer (if inputs are valid)
         else {
             _uiState.update { currentState ->
                 currentState.copy(
