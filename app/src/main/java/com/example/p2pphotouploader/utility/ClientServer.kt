@@ -38,8 +38,7 @@ fun receiveData(input: InputStream): ByteArray {
 
 
 /**
- * Securely sends data to the target socket
- * (via. outputStream).
+ * Sends data to the target socket (via. outputStream).
  *
  * @param inputData
  *      A bytearray containing data to send
@@ -47,24 +46,14 @@ fun receiveData(input: InputStream): ByteArray {
  * @param output
  *      The target socket's outputStream object
  *
- * @param secretKey
- *      A shared SecretKey object
- *
- * @param iv
- *      A byteArray containing bytes of the IV
- *
  * @return [Nothing]
  */
 fun sendData(inputData: ByteArray,
-             output: DataOutputStream,
-             secretKey: SecretKey,
-             iv: ByteArray?)
+             output: DataOutputStream)
 {
-    val encryptedData = AESEncrypt(data = inputData, key = secretKey, iv = iv)
-    output.write(encryptedData)
+    output.write(inputData)
     output.flush()
-    println("[+] Photo Size (after padding): ${encryptedData.size}")
-    println("[+] Message sent successfully!")
+    println("[+] Data has been sent successfully!")
 }
 
 

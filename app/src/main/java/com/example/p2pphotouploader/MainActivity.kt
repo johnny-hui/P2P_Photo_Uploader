@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Initializes BouncyCastle Provider
+    // Initializes BouncyCastle Provider (for cryptographic operations)
     private fun initializeBouncyCastle() {
         val provider: Provider = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME)
             ?: // Web3j will set up the provider lazily when it's first used.
@@ -61,11 +61,11 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        // SOURCE USED: https://github.com/hyperledger/web3j/issues/915
         // Android registers its own BC provider. As it might be outdated and might not include
         // all needed ciphers, we substitute it with a known BC bundled in the app.
         // Android's BC has its package rewritten to "com.android.org.bouncycastle" and because
         // of that it's possible to have another BC implementation loaded in the VM.
-        // SOURCE USED: https://github.com/hyperledger/web3j/issues/915
         Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
         Security.insertProviderAt(BouncyCastleProvider(), 1)
     }

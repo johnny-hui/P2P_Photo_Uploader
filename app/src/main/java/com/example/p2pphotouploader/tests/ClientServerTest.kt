@@ -1,6 +1,7 @@
 package com.example.p2pphotouploader.tests
 
 import com.example.p2pphotouploader.utility.AESDecrypt
+import com.example.p2pphotouploader.utility.AESEncrypt
 import com.example.p2pphotouploader.utility.establishSecurityParameters
 import com.example.p2pphotouploader.utility.generateKeyPair
 import com.example.p2pphotouploader.utility.receiveData
@@ -20,11 +21,10 @@ fun main() {
     val (secretKey, sessionIV) = establishSecurityParameters(peerSocket, privateKey, publicKey)
 
     // Encrypt the data
+    val test = AESEncrypt(data="Hello Dude!".toByteArray(), key=secretKey, iv=sessionIV)
     sendData(
-        inputData = "Hello Dude!".toByteArray(),
+        inputData = test,
         output = DataOutputStream(peerSocket.getOutputStream()),
-        secretKey = secretKey,
-        iv = sessionIV
     )
 
     // Receive encrypted data

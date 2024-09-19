@@ -21,8 +21,6 @@ import com.example.p2pphotouploader.ui.PhotoCaptureScreen
 import com.example.p2pphotouploader.ui.PreviewPhotoScreen
 import com.example.p2pphotouploader.ui.SplashScreen
 import com.example.p2pphotouploader.ui.TargetViewModel
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import java.security.Security
 
 enum class P2PAppScreen {
     START,

@@ -4,14 +4,11 @@ import android.graphics.Bitmap
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
-import java.io.BufferedReader
-import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.io.IOException
-import java.io.InputStreamReader
+import java.io.InputStream
 import java.io.OutputStream
-import java.io.OutputStreamWriter
 import java.net.Socket
 import java.nio.ByteBuffer
 
@@ -50,46 +47,51 @@ suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
             val (privateKey, publicKey) = generateKeyPair()
             val targetSocket = Socket(ip, port)
 
-            val (secretKey, sessionIV) = establishSecurityParameters(targetSocket, privateKey, publicKey)
-
             if(targetSocket.isConnected) {
-                val input = BufferedReader(InputStreamReader(targetSocket.getInputStream()))
-                val output = BufferedWriter(OutputStreamWriter(targetSocket.getOutputStream()))
+                val input = targetSocket.getInputStream()
+                val output = targetSocket.getOutputStream()
                 val dataOutputStream = DataOutputStream(targetSocket.getOutputStream())
 
-                // Send a signal to target
+                // Perform key exchange, derive shared secret & IV
+                val (secretKey, sessionIV) = establishSecurityParameters(targetSocket, privateKey, publicKey)
+
+                // Send an encrypted signal to target
                 sendData(
-                    inputData = SIGNAL.toByteArray(),
-                    output = dataOutputStream,
-                    secretKey = secretKey,
-                    iv=sessionIV
+                    inputData = AESEncrypt(data=SIGNAL.toByteArray(), key=secretKey, iv=sessionIV),
+                    output = dataOutputStream
                 )
                 delay(DELAY)
 
+                // Compress photo bitmap data to bytearray
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
                 val photoData = byteArrayOutputStream.toByteArray()
 
-                // Send size of photo
-                val photoSize = ByteBuffer.allocate(4).putInt(photoData.size).array()
-                println("[+] Photo Size (before padding): ${photoData.size}")
-                sendData(
-                    inputData = photoSize,
-                    output = dataOutputStream,
-                    secretKey = secretKey,
+                // Encrypt the photo first
+                val encryptedPhoto = AESEncrypt(data=photoData, key=secretKey, iv=sessionIV)
+
+                // Send size of photo (encrypted)
+                val photoSize = AESEncrypt(
+                    data=ByteBuffer.allocate(4).putInt(encryptedPhoto.size).array(),
+                    key=secretKey,
                     iv=sessionIV
                 )
+                sendData(inputData=photoSize, output=dataOutputStream)
 
-                // Send photo data
-                sendData(
-                    inputData = photoData,
-                    output = dataOutputStream,
-                    secretKey = secretKey,
-                    iv=sessionIV
+                // Send encrypted photo
+                sendData(inputData=encryptedPhoto, output=dataOutputStream)
+
+                // Receive status from target
+                val status = String(
+                    AESDecrypt(
+                        data=receiveData(input=input),
+                        key=secretKey,
+                        iv=sessionIV
+                    )
                 )
 
-                if(input.readLine() == ACK) {
-                    clearFD(targetSocket, input, dataOutputStream, output)
+                if(status == ACK) {
+                    clearFD(targetSocket, input, output, dataOutputStream)
                     result = SUCCESS
                 }
             } else {
@@ -111,9 +113,9 @@ suspend fun uploadPhotoAsync(ip: String, port: Int, bitmap: Bitmap?): String {
 
 
 private fun clearFD(socket: Socket,
-                    inputFD: BufferedReader,
+                    inputFD: InputStream,
                     outputFD: OutputStream,
-                    outputPrint: BufferedWriter)
+                    outputPrint: DataOutputStream)
 {
     inputFD.close()
     outputFD.close()
