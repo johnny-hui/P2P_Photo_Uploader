@@ -1,9 +1,9 @@
 # P2P Photo Uploader Android App 
 
 <p align="center">
-  <img src="pictures/android_1.png" width="300" />
-  <img src="pictures/android_2.png" width="300" />
-  <img src="pictures/android_3.png" width="300" />
+  <img src="pictures/android_1.png" width="250" />
+  <img src="pictures/android_2.png" width="250" />
+  <img src="pictures/android_3.png" width="250" />
 </p>
 
 ---
